@@ -235,7 +235,7 @@
     <hr class="filet">
 
     <div class="produit">
-      <img class="vignette" src="piege-1.jpg" alt="Piège à frelon asiatique">
+      <img class="vignette" src="piege-1.jpg" data-img-transparent="piege-1.jpg" data-img-rouge-transparent="piege-rouge.jpg" data-img-blanc="piege-blanc.jpg" alt="Piège à frelon asiatique">
       <div>
         <h3>Piège à frelon asiatique sélectif</h3>
         <p class="note">Se visse sur un pot de confiture standard (TO82). Entrées calibrées, sorties latérales pour les abeilles et petits insectes.</p>
@@ -257,7 +257,7 @@
     </div>
 
     <div class="produit">
-      <img class="vignette" src="piege-2.jpg" alt="Deux pièges à frelon">
+      <img class="vignette" src="piege-2.jpg" data-img-transparent="piege-2.jpg" data-img-rouge-transparent="piege-rouge.jpg" data-img-blanc="piege-blanc.jpg" alt="Deux pièges à frelon">
       <div>
         <h3>Le lot de deux</h3>
         <p class="note">Un près du composteur, l'autre à l'autre bout du jardin. Port offert.</p>
@@ -451,6 +451,7 @@ document.querySelectorAll(".produit").forEach(prod => {
   const labelC = prod.querySelector("[data-c-label]");
   const affN = prod.querySelector("[data-n]");
   const lienMail = prod.querySelector("[data-mail]");
+  const vign = prod.querySelector("img.vignette");
 
   const calc = () => {
     const sousTotal = prix * etat.n;
@@ -471,6 +472,10 @@ document.querySelectorAll(".produit").forEach(prod => {
     btn.textContent = "commander — " + total.replace(".", ",") + " € " + (port === 0 ? "port offert" : "port inclus") + " (PayPal)";
     if (affN) affN.textContent = etat.n;
     if (labelC) labelC.textContent = etat.c.toLowerCase();
+    if (vign) {
+      const src = vign.getAttribute("data-img-" + etat.c.toLowerCase().replace(/ /g, "-"));
+      if (src) vign.src = src;
+    }
     if (lienMail) lienMail.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande : " + nom) + "&body=" + corpsMail("Je souhaite commander");
   };
 
