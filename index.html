@@ -242,7 +242,7 @@
       </div>
       <div class="achat">
         <div class="prix">34,90&nbsp;€</div>
-        <a class="paypal" data-prix="34.90" data-nom="Lot de 2 pièges à frelon" href="#">commander (PayPal)</a>
+        <a class="paypal" data-prix="34.90" data-port="0" data-nom="Lot de 2 pièges à frelon" href="#">commander (PayPal)</a>
         <a data-mail data-nom="Lot de 2 pièges à frelon" href="#">ou par email</a>
       </div>
     </div>
@@ -314,7 +314,7 @@
       </div>
       <div class="achat">
         <div class="prix">29,90&nbsp;€</div>
-        <a class="paypal" data-prix="29.90" data-nom="Pack piège + abreuvoir" href="#">commander (PayPal)</a>
+        <a class="paypal" data-prix="29.90" data-port="0" data-nom="Pack piège + abreuvoir" href="#">commander (PayPal)</a>
         <a data-mail data-nom="Pack piège + abreuvoir" href="#">ou par email</a>
       </div>
     </div>
@@ -412,7 +412,7 @@ const PORT = 4.90, PORT_OFFERT_DES = 35;
 document.querySelectorAll(".paypal").forEach(btn => {
   const prix = parseFloat(btn.dataset.prix);
   const nom = btn.dataset.nom;
-  const port = prix >= PORT_OFFERT_DES ? 0 : PORT;
+  const port = btn.dataset.port === "0" ? 0 : (prix >= PORT_OFFERT_DES ? 0 : PORT);
   const total = (prix + port).toFixed(2);
   btn.textContent = `commander — ${total.replace(".", ",")} € ${port === 0 ? "port offert" : "port inclus"} (PayPal)`;
   btn.addEventListener("click", e => {
