@@ -101,6 +101,7 @@
   }
   .produit:first-of-type{border-top:1px solid var(--ligne)}
   .produit .vignette{width:150px;height:110px;object-fit:cover;border:6px solid #fff;box-shadow:0 5px 14px rgba(34,48,31,.15);transform:rotate(-1deg)}
+  video.vignette{background:#000}
   .produit:nth-child(even) .vignette{transform:rotate(1.2deg)}
   .produit .vignette-dessin{width:150px;height:110px;border:6px solid #fff;box-shadow:0 5px 14px rgba(34,48,31,.12);background:#ece5d2;display:flex;align-items:center;justify-content:center;transform:rotate(1deg)}
   .produit .vignette-dessin svg{width:82%;height:82%}
@@ -278,14 +279,7 @@
     </div>
 
     <div class="produit">
-      <div class="vignette-dessin" aria-hidden="true">
-        <svg viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg">
-          <ellipse cx="100" cy="95" rx="66" ry="24" fill="#3c6b32"/>
-          <ellipse cx="100" cy="88" rx="57" ry="19" fill="#9ec7dd"/>
-          <circle cx="78" cy="84" r="7" fill="#d8a13c"/><circle cx="102" cy="90" r="7" fill="#d8a13c"/><circle cx="124" cy="82" r="7" fill="#d8a13c"/>
-          <g transform="translate(142,40) rotate(10)"><ellipse rx="12" ry="8" fill="#e8c65a" stroke="#22301f" stroke-width="2"/><path d="M-4 -8 L-4 8 M3 -8 L3 8" stroke="#22301f" stroke-width="2"/><circle cx="11" cy="-1" r="5" fill="#22301f"/></g>
-        </svg>
-      </div>
+      <video class="vignette" src="abreuvoir-fab.mp4" muted autoplay loop playsinline aria-label="Impression 3D de l'abreuvoir en accéléré"></video>
       <div>
         <h3>Abreuvoir à réserve — oiseaux, chats &amp; petits animaux</h3>
         <p class="note">Le socle se visse sur une bouteille en plastique standard : retournez-la, l'eau se régule toute seule, sans pile. À poser ou à suspendre à une branche. Testé par les mésanges du jardin — et approuvé par les chats.</p>
