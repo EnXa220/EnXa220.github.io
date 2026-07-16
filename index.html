@@ -126,6 +126,8 @@
 
   /* ---------- vidéo ---------- */
   .video-cadre{border:12px solid #fff;box-shadow:0 14px 30px rgba(34,48,31,.2);transform:rotate(.6deg);margin-top:8px}
+  .duo-videos{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
+  @media(max-width:760px){.duo-videos{grid-template-columns:1fr}}
   .video-cadre video{width:100%;display:block}
   .legende-video{font-style:italic;font-size:.9rem;color:#5c5747;text-align:center;margin-top:14px}
 
@@ -279,7 +281,7 @@
     </div>
 
     <div class="produit">
-      <video class="vignette" src="abreuvoir-fab.mp4" muted autoplay loop playsinline aria-label="Impression 3D de l'abreuvoir en accéléré"></video>
+      <img class="vignette" src="abreuvoir-1.jpg" data-cycle="abreuvoir-1.jpg,abreuvoir-2.jpg" alt="Abreuvoir à réserve suspendu dans un arbre, visité par des mésanges">
       <div>
         <h3>Abreuvoir à réserve — oiseaux, chats &amp; petits animaux</h3>
         <p class="note">Le socle se visse sur une bouteille en plastique standard : retournez-la, l'eau se régule toute seule, sans pile. À poser ou à suspendre à une branche. Testé par les mésanges du jardin — et approuvé par les chats.</p>
@@ -363,10 +365,20 @@
     <h2>Imprimé couche par couche, à la commande</h2>
     <hr class="filet">
     <p style="max-width:60ch">Pas de stock, pas d'usine : quand vous commandez, l'imprimante démarre. Compte plusieurs heures d'impression par pièce, en PETG — un plastique qui tient les UV, la pluie et le gel, là où d'autres se déforment au premier été.</p>
-    <div class="video-cadre">
-      <video src="timelapse.mp4" poster="poster.jpg" muted autoplay loop playsinline controls preload="metadata" aria-label="Impression 3D du piège en accéléré"></video>
+    <div class="duo-videos">
+      <div>
+        <div class="video-cadre">
+          <video src="timelapse.mp4" poster="poster.jpg" muted autoplay loop playsinline controls preload="metadata" aria-label="Impression 3D du piège en accéléré"></video>
+        </div>
+        <p class="legende-video">le piège, en accéléré</p>
+      </div>
+      <div>
+        <div class="video-cadre" style="transform:rotate(-.6deg)">
+          <video src="abreuvoir-fab.mp4" muted autoplay loop playsinline controls preload="metadata" aria-label="Impression 3D de l'abreuvoir en accéléré"></video>
+        </div>
+        <p class="legende-video">l'abreuvoir, couche par couche</p>
+      </div>
     </div>
-    <p class="legende-video">l'impression d'un piège, en accéléré</p>
   </div>
 </section>
 
@@ -508,6 +520,13 @@ document.querySelectorAll(".produit").forEach(prod => {
   });
 
   maj();
+});
+
+// vignettes qui alternent entre deux photos
+document.querySelectorAll("img.vignette[data-cycle]").forEach(img => {
+  const srcs = img.dataset.cycle.split(",");
+  let i = 0;
+  setInterval(() => { i = (i + 1) % srcs.length; img.src = srcs[i]; }, 3500);
 });
 </script>
 </body>
