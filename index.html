@@ -143,6 +143,13 @@
   .btn-panier:hover{background:var(--vert)}
   .btn-panier.second{background:transparent;color:var(--encre)!important;border:1.5px solid var(--encre)}
   #panier-vider{background:none;border:none;color:#7a7258;font-size:.8rem;cursor:pointer;text-decoration:underline;font-family:'Segoe UI',Arial,sans-serif}
+  #panier-form{margin:6px 0 14px}
+  .etiq-form{font-family:'Segoe UI',Arial,sans-serif;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#7a7258;margin:14px 0 8px}
+  label.livr{display:block;font-size:.92rem;margin-bottom:7px;cursor:pointer}
+  label.livr b{font-style:italic;font-weight:normal}
+  label.livr input{margin-right:8px;accent-color:#3c6b32}
+  .champ{width:100%;padding:10px 12px;border:1px solid var(--ligne);background:#fff;font-family:Georgia,serif;font-size:.95rem;margin-bottom:8px;border-radius:3px;color:var(--encre)}
+  .champ::placeholder{color:#a89f85}
   [hidden]{display:none!important}
 
   /* ---------- vidéo ---------- */
@@ -475,7 +482,19 @@
   <h3>Votre panier</h3>
   <div id="panier-lignes"></div>
   <p id="panier-total"></p>
-  <p class="panier-note">livraison point relais incluse (France métropolitaine)</p>
+  <div id="panier-form">
+    <p class="etiq-form">Livraison (France métropolitaine)</p>
+    <label class="livr"><input type="radio" name="livr" value="relais" checked> Point relais Mondial Relay — <b>incluse</b></label>
+    <label class="livr"><input type="radio" name="livr" value="domicile"> À domicile (Colissimo) — <b>+ 2,00 €</b></label>
+    <label class="livr"><input type="radio" name="livr" value="main-propre"> Remise en main propre — <b>selon secteur</b></label>
+    <p class="etiq-form">Vos coordonnées</p>
+    <input class="champ" id="f-nom" placeholder="Nom et prénom">
+    <input class="champ" id="f-email" type="email" placeholder="Email">
+    <input class="champ" id="f-tel" placeholder="Téléphone (pour le SMS du relais)">
+    <input class="champ" id="f-adresse" placeholder="Adresse">
+    <input class="champ" id="f-cpville" placeholder="Code postal et ville">
+    <input class="champ" id="f-relais" placeholder="Point relais souhaité (optionnel)">
+  </div>
   <a id="panier-paypal" class="btn-panier" href="#">payer avec PayPal</a>
   <a id="panier-mail" class="btn-panier second" href="#">commander par email</a>
   <button id="panier-vider">vider le panier</button>
@@ -495,10 +514,29 @@ const eur = v => v.toFixed(2).replace(".", ",") + " €";
 const panierTotal = () => PANIER.reduce((s, l) => s + l.prix * l.n, 0);
 const panierNb = () => PANIER.reduce((s, l) => s + l.n, 0);
 function panierSauve() { try { localStorage.setItem(CLE_PANIER, JSON.stringify(PANIER)); } catch (e) {} }
+const LIVR = {
+  "relais": { label: "Point relais Mondial Relay", supp: 0 },
+  "domicile": { label: "À domicile (Colissimo)", supp: 2.00 },
+  "main-propre": { label: "Remise en main propre", supp: 0 }
+};
+const livrChoix = () => { const r = document.querySelector('input[name="livr"]:checked'); return r ? r.value : "relais"; };
+const panierGrandTotal = () => panierTotal() + LIVR[livrChoix()].supp;
+const champ = id => document.getElementById(id).value.trim();
+function panierValide() {
+  if (!champ("f-nom")) { alert("Indiquez votre nom et prénom pour la commande."); return false; }
+  if (livrChoix() !== "main-propre" && (!champ("f-adresse") || !champ("f-cpville"))) { alert("Indiquez votre adresse complète pour la livraison."); return false; }
+  return true;
+}
 function panierRecap() {
+  const L = LIVR[livrChoix()];
   let t = "Bonjour,\nJe souhaite commander :\n";
   PANIER.forEach(l => { t += "- " + l.nom + " (" + l.c + ") x" + l.n + " : " + eur(l.prix * l.n) + "\n"; });
-  t += "Total : " + eur(panierTotal()) + " (livraison incluse)\n\nMon adresse de livraison :\nNom :\nAdresse :\nCode postal / Ville :\n\nMerci !";
+  t += "Livraison : " + L.label + (L.supp ? " (+" + eur(L.supp) + ")" : " (incluse)") + "\n";
+  t += "Total : " + eur(panierGrandTotal()) + "\n\n";
+  t += "Nom : " + champ("f-nom") + "\nEmail : " + champ("f-email") + "\nTéléphone : " + champ("f-tel") + "\n";
+  t += "Adresse : " + champ("f-adresse") + "\nCode postal / Ville : " + champ("f-cpville") + "\n";
+  if (livrChoix() === "relais" && champ("f-relais")) t += "Point relais souhaité : " + champ("f-relais") + "\n";
+  t += "\nMerci !";
   return t;
 }
 function panierOuvrir(o) {
@@ -520,25 +558,32 @@ function panierRendre() {
     d.querySelector("[data-pp]").onclick = () => { l.n = Math.min(9, l.n + 1); panierSauve(); panierRendre(); };
     zone.appendChild(d);
   });
-  document.getElementById("panier-total").textContent = PANIER.length ? "Total : " + eur(panierTotal()) : "Votre panier est vide.";
+  const L = LIVR[livrChoix()];
+  document.getElementById("panier-total").textContent = PANIER.length ? ("Total : " + eur(panierGrandTotal()) + (L.supp ? " (dont livraison " + eur(L.supp) + ")" : "")) : "Votre panier est vide.";
 }
 document.getElementById("panier-btn").onclick = () => panierOuvrir(true);
 document.getElementById("panier-fond").onclick = () => panierOuvrir(false);
 document.getElementById("panier-fermer").onclick = () => panierOuvrir(false);
 document.getElementById("panier-vider").onclick = () => { PANIER = []; panierSauve(); panierRendre(); };
+document.querySelectorAll('input[name="livr"]').forEach(r => r.addEventListener("change", () => {
+  document.getElementById("f-relais").style.display = livrChoix() === "relais" ? "" : "none";
+  panierRendre();
+}));
 document.getElementById("panier-mail").onclick = function (e) {
   e.preventDefault();
   if (!PANIER.length) return;
+  if (!panierValide()) return;
   location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
 };
 document.getElementById("panier-paypal").onclick = function (e) {
   e.preventDefault();
   if (!PANIER.length) return;
+  if (!panierValide()) return;
   if (PAYPAL_USER === "TONPSEUDO") {
     alert("Le paiement PayPal arrive bientôt — utilisez « commander par email » juste en dessous !");
     return;
   }
-  const total = panierTotal().toFixed(2);
+  const total = panierGrandTotal().toFixed(2);
   window.open("https://www.paypal.me/" + PAYPAL_USER + "/" + total + "EUR", "_blank");
   setTimeout(() => {
     if (confirm("Après le paiement PayPal, cliquez sur OK pour m'envoyer le récapitulatif et votre adresse par email.")) {
