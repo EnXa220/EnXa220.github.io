@@ -124,6 +124,27 @@
   .qte button{background:none;border:none;font-size:1.05rem;cursor:pointer;color:var(--encre);font-family:Georgia,serif;line-height:1}
   .qte b{min-width:14px;text-align:center;font-family:Georgia,serif}
 
+  /* ---------- panier ---------- */
+  #panier-btn{position:fixed;right:22px;bottom:22px;z-index:60;background:var(--encre);color:var(--papier);border:none;border-radius:999px;padding:14px 24px;font-family:Georgia,serif;font-size:1.05rem;cursor:pointer;box-shadow:0 8px 20px rgba(34,48,31,.35)}
+  #panier-btn:hover{background:var(--vert)}
+  #panier-fond{position:fixed;inset:0;background:rgba(34,48,31,.45);z-index:70}
+  #panier{position:fixed;top:0;right:0;bottom:0;width:min(400px,92vw);background:var(--papier);border-left:1px solid var(--ligne);z-index:80;padding:30px 26px;overflow-y:auto}
+  #panier h3{font-size:1.45rem;font-weight:normal;margin-bottom:18px}
+  #panier-fermer{position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.7rem;cursor:pointer;color:var(--encre)}
+  .panier-ligne{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--ligne);font-size:.95rem}
+  .panier-ligne em{color:#7a7258;font-size:.85rem}
+  .pl-nom{flex:1}
+  .pl-qte{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ligne);border-radius:999px;padding:2px 9px;background:#fff}
+  .pl-qte button{background:none;border:none;cursor:pointer;font-family:Georgia,serif;font-size:1rem;color:var(--encre)}
+  .pl-prix{font-style:italic;min-width:72px;text-align:right}
+  #panier-total{font-size:1.25rem;font-style:italic;margin:16px 0 4px}
+  .panier-note{font-size:.82rem;color:#7a7258;font-style:italic;margin-bottom:16px}
+  .btn-panier{display:block;text-align:center;background:var(--encre);color:var(--papier)!important;text-decoration:none;padding:13px;border-radius:3px;font-family:'Segoe UI',Arial,sans-serif;font-size:.95rem;margin-bottom:10px}
+  .btn-panier:hover{background:var(--vert)}
+  .btn-panier.second{background:transparent;color:var(--encre)!important;border:1.5px solid var(--encre)}
+  #panier-vider{background:none;border:none;color:#7a7258;font-size:.8rem;cursor:pointer;text-decoration:underline;font-family:'Segoe UI',Arial,sans-serif}
+  [hidden]{display:none!important}
+
   /* ---------- vidéo ---------- */
   .video-cadre{border:12px solid #fff;box-shadow:0 14px 30px rgba(34,48,31,.2);transform:rotate(.6deg);margin-top:8px}
   .duo-videos{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:start}
@@ -446,11 +467,85 @@
   </div>
 </footer>
 
+<!-- ============ PANIER ============ -->
+<button id="panier-btn" hidden>panier · <b id="panier-n">0</b></button>
+<div id="panier-fond" hidden></div>
+<aside id="panier" hidden aria-label="Panier">
+  <button id="panier-fermer" aria-label="Fermer">×</button>
+  <h3>Votre panier</h3>
+  <div id="panier-lignes"></div>
+  <p id="panier-total"></p>
+  <p class="panier-note">livraison point relais incluse (France métropolitaine)</p>
+  <a id="panier-paypal" class="btn-panier" href="#">payer avec PayPal</a>
+  <a id="panier-mail" class="btn-panier second" href="#">commander par email</a>
+  <button id="panier-vider">vider le panier</button>
+</aside>
+
 <script>
 /* ---------- à personnaliser ---------- */
 const PAYPAL_USER = "TONPSEUDO";           // ton pseudo paypal.me
 const EMAIL = "louiscabane44@gmail.com";
 const PORT = 0, PORT_OFFERT_DES = 0; // livraison incluse dans les prix
+
+/* ---------- panier ---------- */
+const CLE_PANIER = "jardiprint_panier";
+let PANIER = [];
+try { PANIER = JSON.parse(localStorage.getItem(CLE_PANIER) || "[]"); } catch (e) { PANIER = []; }
+const eur = v => v.toFixed(2).replace(".", ",") + " €";
+const panierTotal = () => PANIER.reduce((s, l) => s + l.prix * l.n, 0);
+const panierNb = () => PANIER.reduce((s, l) => s + l.n, 0);
+function panierSauve() { try { localStorage.setItem(CLE_PANIER, JSON.stringify(PANIER)); } catch (e) {} }
+function panierRecap() {
+  let t = "Bonjour,\nJe souhaite commander :\n";
+  PANIER.forEach(l => { t += "- " + l.nom + " (" + l.c + ") x" + l.n + " : " + eur(l.prix * l.n) + "\n"; });
+  t += "Total : " + eur(panierTotal()) + " (livraison incluse)\n\nMon adresse de livraison :\nNom :\nAdresse :\nCode postal / Ville :\n\nMerci !";
+  return t;
+}
+function panierOuvrir(o) {
+  document.getElementById("panier").hidden = !o;
+  document.getElementById("panier-fond").hidden = !o;
+}
+function panierRendre() {
+  document.getElementById("panier-n").textContent = panierNb();
+  document.getElementById("panier-btn").hidden = PANIER.length === 0;
+  const zone = document.getElementById("panier-lignes");
+  zone.innerHTML = "";
+  PANIER.forEach((l, i) => {
+    const d = document.createElement("div");
+    d.className = "panier-ligne";
+    d.innerHTML = '<span class="pl-nom">' + l.nom + '<br><em>' + l.c.toLowerCase() + '</em></span>' +
+      '<span class="pl-qte"><button data-pm>–</button><b>' + l.n + '</b><button data-pp>+</button></span>' +
+      '<span class="pl-prix">' + eur(l.prix * l.n) + '</span>';
+    d.querySelector("[data-pm]").onclick = () => { l.n--; if (l.n <= 0) PANIER.splice(i, 1); panierSauve(); panierRendre(); };
+    d.querySelector("[data-pp]").onclick = () => { l.n = Math.min(9, l.n + 1); panierSauve(); panierRendre(); };
+    zone.appendChild(d);
+  });
+  document.getElementById("panier-total").textContent = PANIER.length ? "Total : " + eur(panierTotal()) : "Votre panier est vide.";
+}
+document.getElementById("panier-btn").onclick = () => panierOuvrir(true);
+document.getElementById("panier-fond").onclick = () => panierOuvrir(false);
+document.getElementById("panier-fermer").onclick = () => panierOuvrir(false);
+document.getElementById("panier-vider").onclick = () => { PANIER = []; panierSauve(); panierRendre(); };
+document.getElementById("panier-mail").onclick = function (e) {
+  e.preventDefault();
+  if (!PANIER.length) return;
+  location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
+};
+document.getElementById("panier-paypal").onclick = function (e) {
+  e.preventDefault();
+  if (!PANIER.length) return;
+  if (PAYPAL_USER === "TONPSEUDO") {
+    alert("Le paiement PayPal arrive bientôt — utilisez « commander par email » juste en dessous !");
+    return;
+  }
+  const total = panierTotal().toFixed(2);
+  window.open("https://www.paypal.me/" + PAYPAL_USER + "/" + total + "EUR", "_blank");
+  setTimeout(() => {
+    if (confirm("Après le paiement PayPal, cliquez sur OK pour m'envoyer le récapitulatif et votre adresse par email.")) {
+      location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande payée JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
+    }
+  }, 600);
+};
 
 document.querySelectorAll(".produit").forEach(prod => {
   const btn = prod.querySelector(".paypal");
@@ -481,7 +576,7 @@ document.querySelectorAll(".produit").forEach(prod => {
 
   const maj = () => {
     const { port, total } = calc();
-    btn.textContent = "commander — " + total.replace(".", ",") + " € livraison incluse (PayPal)";
+    btn.textContent = "ajouter au panier — " + eur(prix * etat.n);
     if (affN) affN.textContent = etat.n;
     if (labelC) labelC.textContent = etat.c.toLowerCase();
     if (vign) {
@@ -506,21 +601,14 @@ document.querySelectorAll(".produit").forEach(prod => {
 
   btn.addEventListener("click", e => {
     e.preventDefault();
-    if (PAYPAL_USER === "TONPSEUDO") {
-      alert("Le paiement PayPal arrive bientôt — en attendant, commandez par email juste en dessous !");
-      return;
-    }
-    const { total } = calc();
-    window.open("https://www.paypal.me/" + PAYPAL_USER + "/" + total + "EUR", "_blank");
-    setTimeout(() => {
-      if (confirm("Après le paiement PayPal, cliquez sur OK pour m'envoyer votre adresse de livraison par email.")) {
-        location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande payée : " + nom) + "&body=" + corpsMail("Je viens de payer " + total + " € par PayPal pour");
-      }
-    }, 600);
+    const exist = PANIER.find(l => l.nom === nom && l.c === etat.c);
+    if (exist) exist.n = Math.min(9, exist.n + etat.n); else PANIER.push({ nom: nom, prix: prix, c: etat.c, n: etat.n });
+    panierSauve(); panierRendre(); panierOuvrir(true);
   });
 
   maj();
 });
+panierRendre();
 
 // vignettes qui alternent entre deux photos
 document.querySelectorAll("img.vignette[data-cycle]").forEach(img => {
