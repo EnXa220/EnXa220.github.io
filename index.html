@@ -150,6 +150,10 @@
   label.livr input{margin-right:8px;accent-color:#3c6b32}
   .champ{width:100%;padding:10px 12px;border:1px solid var(--ligne);background:#fff;font-family:Georgia,serif;font-size:.95rem;margin-bottom:8px;border-radius:3px;color:var(--encre)}
   .champ::placeholder{color:#a89f85}
+  #f-sugg{border:1px solid var(--ligne);border-top:none;background:#fff;margin:-8px 0 8px;border-radius:0 0 3px 3px;overflow:hidden}
+  #f-sugg button{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--ligne);padding:9px 12px;font-family:Georgia,serif;font-size:.88rem;cursor:pointer;color:var(--encre)}
+  #f-sugg button:last-child{border-bottom:none}
+  #f-sugg button:hover{background:var(--papier)}
   [hidden]{display:none!important}
 
   /* ---------- vidéo ---------- */
@@ -486,12 +490,12 @@
     <p class="etiq-form">Livraison (France métropolitaine)</p>
     <label class="livr"><input type="radio" name="livr" value="relais" checked> Point relais Mondial Relay — <b>incluse</b></label>
     <label class="livr"><input type="radio" name="livr" value="domicile"> À domicile (Colissimo) — <b>+ 2,00 €</b></label>
-    <label class="livr"><input type="radio" name="livr" value="main-propre"> Remise en main propre — <b>selon secteur</b></label>
     <p class="etiq-form">Vos coordonnées</p>
     <input class="champ" id="f-nom" placeholder="Nom et prénom">
     <input class="champ" id="f-email" type="email" placeholder="Email">
     <input class="champ" id="f-tel" placeholder="Téléphone (pour le SMS du relais)">
-    <input class="champ" id="f-adresse" placeholder="Adresse">
+    <input class="champ" id="f-adresse" placeholder="Adresse (tapez, puis choisissez dans la liste)" autocomplete="off">
+    <div id="f-sugg" hidden></div>
     <input class="champ" id="f-cpville" placeholder="Code postal et ville">
     <input class="champ" id="f-relais" placeholder="Point relais souhaité (optionnel)">
   </div>
@@ -516,15 +520,16 @@ const panierNb = () => PANIER.reduce((s, l) => s + l.n, 0);
 function panierSauve() { try { localStorage.setItem(CLE_PANIER, JSON.stringify(PANIER)); } catch (e) {} }
 const LIVR = {
   "relais": { label: "Point relais Mondial Relay", supp: 0 },
-  "domicile": { label: "À domicile (Colissimo)", supp: 2.00 },
-  "main-propre": { label: "Remise en main propre", supp: 0 }
+  "domicile": { label: "À domicile (Colissimo)", supp: 2.00 }
 };
 const livrChoix = () => { const r = document.querySelector('input[name="livr"]:checked'); return r ? r.value : "relais"; };
 const panierGrandTotal = () => panierTotal() + LIVR[livrChoix()].supp;
 const champ = id => document.getElementById(id).value.trim();
 function panierValide() {
   if (!champ("f-nom")) { alert("Indiquez votre nom et prénom pour la commande."); return false; }
-  if (livrChoix() !== "main-propre" && (!champ("f-adresse") || !champ("f-cpville"))) { alert("Indiquez votre adresse complète pour la livraison."); return false; }
+  if (!champ("f-adresse") || !champ("f-cpville")) { alert("Indiquez votre adresse complète pour la livraison."); return false; }
+  const cp = (champ("f-cpville").match(/\b\d{5}\b/) || [""])[0];
+  if (/^(97[1-8]|98[4-8])/.test(cp)) { alert("Pour l'outre-mer, écrivez-moi d'abord (rubrique Écrire) : le tarif de livraison est différent, je vous ferai un prix adapté."); return false; }
   return true;
 }
 function panierRecap() {
@@ -569,6 +574,39 @@ document.querySelectorAll('input[name="livr"]').forEach(r => r.addEventListener(
   document.getElementById("f-relais").style.display = livrChoix() === "relais" ? "" : "none";
   panierRendre();
 }));
+
+/* auto-complétion d'adresse — Base Adresse Nationale (Géoplateforme IGN) */
+(function () {
+  const fAdr = document.getElementById("f-adresse");
+  const boxS = document.getElementById("f-sugg");
+  let tempo;
+  fAdr.addEventListener("input", () => {
+    clearTimeout(tempo);
+    const q = fAdr.value.trim();
+    if (q.length < 4) { boxS.innerHTML = ""; boxS.hidden = true; return; }
+    tempo = setTimeout(() => {
+      fetch("https://data.geopf.fr/geocodage/search/?limit=5&autocomplete=1&q=" + encodeURIComponent(q))
+        .then(r => r.json())
+        .then(d => {
+          boxS.innerHTML = "";
+          (d.features || []).forEach(f => {
+            const p = f.properties || {};
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = p.label || "";
+            b.onclick = () => {
+              fAdr.value = p.name || p.label || fAdr.value;
+              document.getElementById("f-cpville").value = ((p.postcode || "") + " " + (p.city || "")).trim();
+              boxS.innerHTML = ""; boxS.hidden = true;
+            };
+            boxS.appendChild(b);
+          });
+          boxS.hidden = boxS.children.length === 0;
+        })
+        .catch(() => {});
+    }, 300);
+  });
+})();
 document.getElementById("panier-mail").onclick = function (e) {
   e.preventDefault();
   if (!PANIER.length) return;
