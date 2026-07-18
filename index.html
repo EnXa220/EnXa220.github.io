@@ -680,7 +680,7 @@ document.getElementById("panier-paypal").onclick = function (e) {
     return;
   }
   const total = panierGrandTotal().toFixed(2);
-  envoyerCommande("PAYÉE via PayPal — vérifier la réception puis expédier");
+  envoyerCommande("Paiement PayPal LANCÉ — NE PAS EXPÉDIER avant d'avoir vu l'argent arriver sur le compte PayPal");
   window.open("https://www.paypal.me/" + PAYPAL_USER + "/" + total + "EUR", "_blank");
   setTimeout(() => {
     if (WEB3FORMS_KEY) {
