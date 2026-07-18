@@ -510,6 +510,9 @@
 const PAYPAL_USER = "TONPSEUDO";           // ton pseudo paypal.me
 const EMAIL = "louiscabane44@gmail.com";
 const PORT = 0, PORT_OFFERT_DES = 0; // livraison incluse dans les prix
+// TODO : va sur https://web3forms.com, entre ton email, et colle ici la clé reçue
+// => chaque commande arrivera alors automatiquement dans ta boîte mail
+const WEB3FORMS_KEY = "";
 
 /* ---------- panier ---------- */
 const CLE_PANIER = "jardiprint_panier";
@@ -569,6 +572,29 @@ function panierRecap() {
   if (livrChoix() === "relais" && champ("f-relais")) t += "Point relais souhaité : " + champ("f-relais") + "\n";
   t += "\nMerci !";
   return t;
+}
+function envoyerCommande(statut) {
+  if (!WEB3FORMS_KEY) return Promise.resolve(false);
+  const lignes = PANIER.map(l => l.nom + " (" + l.c + ") x" + l.n + " = " + eur(l.prix * l.n)).join(" | ");
+  return fetch("https://api.web3forms.com/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({
+      access_key: WEB3FORMS_KEY,
+      subject: "Commande JardiPrint — " + eur(panierGrandTotal()) + " — " + statut,
+      from_name: "Boutique JardiPrint",
+      Statut: statut,
+      Produits: lignes,
+      Livraison: livrLabel(),
+      Total: eur(panierGrandTotal()),
+      Nom: champ("f-nom"),
+      email: champ("f-email"),
+      Telephone: champ("f-tel"),
+      Adresse: champ("f-adresse"),
+      Code_postal_ville: champ("f-cpville"),
+      Point_relais: champ("f-relais")
+    })
+  }).then(r => r.ok).catch(() => false);
 }
 function panierOuvrir(o) {
   document.getElementById("panier").hidden = !o;
@@ -636,7 +662,14 @@ document.getElementById("panier-mail").onclick = function (e) {
   e.preventDefault();
   if (!PANIER.length) return;
   if (!panierValide()) return;
-  location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
+  envoyerCommande("Commande à confirmer (paiement à organiser avec le client)").then(ok => {
+    if (ok) {
+      alert("Commande envoyée ! Je vous recontacte très vite par email pour le paiement et l'expédition. Merci !");
+      PANIER = []; panierSauve(); panierRendre(); panierOuvrir(false);
+    } else {
+      location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
+    }
+  });
 };
 document.getElementById("panier-paypal").onclick = function (e) {
   e.preventDefault();
@@ -647,9 +680,13 @@ document.getElementById("panier-paypal").onclick = function (e) {
     return;
   }
   const total = panierGrandTotal().toFixed(2);
+  envoyerCommande("PAYÉE via PayPal — vérifier la réception puis expédier");
   window.open("https://www.paypal.me/" + PAYPAL_USER + "/" + total + "EUR", "_blank");
   setTimeout(() => {
-    if (confirm("Après le paiement PayPal, cliquez sur OK pour m'envoyer le récapitulatif et votre adresse par email.")) {
+    if (WEB3FORMS_KEY) {
+      alert("Merci ! Votre commande est enregistrée — vous recevrez une confirmation d'expédition par email.");
+      PANIER = []; panierSauve(); panierRendre(); panierOuvrir(false);
+    } else if (confirm("Après le paiement PayPal, cliquez sur OK pour m'envoyer le récapitulatif et votre adresse par email.")) {
       location.href = "mailto:" + EMAIL + "?subject=" + encodeURIComponent("Commande payée JardiPrint") + "&body=" + encodeURIComponent(panierRecap());
     }
   }, 600);
